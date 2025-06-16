@@ -77,19 +77,18 @@ export default function DirektKreditDashboard() {
     if (!campaign) return
 
     const amount = Number.parseFloat(newDonation)
-    if (amount <= 0) return
+    if (amount === 0) return // Prevent adding zero amounts
 
     setSubmitting(true)
     try {
       const { error } = await supabase.from("donations").insert({
         campaign_id: campaign.id,
-        amount: amount,
+        amount: amount, // Negative values will subtract from the total
         donor_name: donorName || "Anonym",
       })
 
       if (error) throw error
 
-      await fetchCampaignData()
       await fetchRecentDonations()
       await sendDiscordUpdate(amount, donorName || "Anonym")
 
