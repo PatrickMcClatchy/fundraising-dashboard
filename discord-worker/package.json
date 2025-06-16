@@ -1,0 +1,17 @@
+{
+    "name": "discord-worker",
+    "version": "1.0.0",
+    "description": "Cloudflare Worker for Discord interactions",
+    "main": "src/index.js",
+    "scripts": {
+        "start": "wrangler dev",
+        "deploy": "wrangler publish"
+    },
+    "dependencies": {
+        "discord-interactions": "^4.3.0"
+    },
+    "devDependencies": {
+        "wrangler": "^3.114.9"
+    },
+    "type": "module"
+}
