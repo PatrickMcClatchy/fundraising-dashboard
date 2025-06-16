@@ -21,24 +21,23 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    // JSON parsen mit Fehlerbehandlung
+    // Parse JSON from the request body
     let updates: unknown
     try {
       updates = await request.json()
     } catch {
-      // parseError entfernt, da nicht verwendet
       return NextResponse.json({ error: "Ungültiges JSON im Request-Body" }, { status: 400 })
     }
 
-    // Validierung der Update-Daten
+    // Validate the update data
     if (!updates || typeof updates !== "object") {
       return NextResponse.json({ error: "Ungültige Update-Daten" }, { status: 400 })
     }
 
     const updateObj = updates as Record<string, unknown>
 
-    // Nur erlaubte Felder für Updates
-    const allowedFields = ["name", "description", "goal", "days_left"]
+    // Allow updates to specific fields
+    const allowedFields = ["name", "description", "goal", "days_left", "raised"]
     const filteredUpdates: Record<string, unknown> = {}
 
     for (const field of allowedFields) {
@@ -47,20 +46,26 @@ export async function POST(request: Request) {
       }
     }
 
-    // Prüfen, ob mindestens ein Feld zum Aktualisieren vorhanden ist
+    // Check if at least one field is provided for updating
     if (Object.keys(filteredUpdates).length === 0) {
       return NextResponse.json({ error: "Keine gültigen Update-Felder gefunden" }, { status: 400 })
     }
 
-    // Die erste (und einzige) Kampagne aktualisieren
-    const { data: existingCampaign, error: fetchError } = await supabase.from("campaigns").select("id").single()
+    // Fetch the existing campaign
+    const { data: existingCampaign, error: fetchError } = await supabase.from("campaigns").select("id, raised").single()
 
     if (fetchError) {
       console.error("Fehler beim Abrufen der Kampagnen-ID:", fetchError)
       return NextResponse.json({ error: "Kampagne nicht gefunden" }, { status: 404 })
     }
 
-    // Kampagne aktualisieren
+    // Handle updates to the "raised" field
+    if (filteredUpdates.raised !== undefined) {
+      const newRaisedAmount = (existingCampaign.raised || 0) + Number(filteredUpdates.raised)
+      filteredUpdates.raised = newRaisedAmount
+    }
+
+    // Update the campaign
     const { data, error } = await supabase
       .from("campaigns")
       .update(filteredUpdates)
